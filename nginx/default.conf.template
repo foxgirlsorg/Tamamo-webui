@@ -1,0 +1,105 @@
+# Tamamo admin web UI. Rendered by the nginx image's envsubst step at start-up.
+# ${TAMAMO_API} is the base URL of the Tamamo admin API, e.g. http://tamamo:8081.
+# On a compose network the default finds the service named "tamamo" by itself.
+
+server {
+    listen 8081;
+    server_name _;
+    server_tokens off;
+
+    # The backend's address is looked up through the container's own DNS server
+    # (Docker's, on a compose network) at request time, not once at start-up,
+    # so recreating or scaling the tamamo container never strands the web UI
+    # on an old IP. NGINX_LOCAL_RESOLVERS is filled in by the nginx image.
+    resolver ${NGINX_LOCAL_RESOLVERS} valid=10s ipv6=off;
+    resolver_timeout 5s;
+    set $tamamo_api ${TAMAMO_API};
+
+    root /usr/share/nginx/html;
+    index index.html;
+
+    # Image uploads are up to 4 MB, plus multipart overhead.
+    client_max_body_size 5m;
+
+    gzip on;
+    gzip_types text/css application/javascript application/json image/svg+xml;
+
+    # Security headers. The preview iframe is same-origin and loads from
+    # srcdoc, so frame-src 'self' is enough. Styles and workers need the
+    # extras listed below.
+    add_header X-Content-Type-Options "nosniff" always;
+    add_header X-Frame-Options "SAMEORIGIN" always;
+    add_header Referrer-Policy "same-origin" always;
+    add_header Permissions-Policy "camera=(), microphone=(), geolocation=()" always;
+    add_header Content-Security-Policy "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self' data:; connect-src 'self'; frame-src 'self'; worker-src 'self' blob:; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'self'" always;
+
+    # ---- Admin API and the images the API serves ----------------------------
+    # proxy_pass with a variable and no path: the request URI is passed through unchanged.
+    # Host is forwarded as the client sent it, because the backend's admin.domains
+    # check compares the Host header.
+
+    location /api/ {
+        proxy_pass $tamamo_api;
+        proxy_http_version 1.1;
+        proxy_set_header Host $http_host;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_read_timeout 60s;
+    }
+
+    location /assets/img/ {
+        proxy_pass $tamamo_api;
+        proxy_http_version 1.1;
+        proxy_set_header Host $http_host;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        proxy_set_header X-Real-IP $remote_addr;
+    }
+
+    location /assets/challenge/ {
+        proxy_pass $tamamo_api;
+        proxy_http_version 1.1;
+        proxy_set_header Host $http_host;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        proxy_set_header X-Real-IP $remote_addr;
+    }
+
+    location /assets/modules/ {
+        proxy_pass $tamamo_api;
+        proxy_http_version 1.1;
+        proxy_set_header Host $http_host;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        proxy_set_header X-Real-IP $remote_addr;
+    }
+
+    location /assets/mascot/ {
+        proxy_pass $tamamo_api;
+        proxy_http_version 1.1;
+        proxy_set_header Host $http_host;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        proxy_set_header X-Real-IP $remote_addr;
+        expires 1h;
+    }
+
+    # ---- The UI -------------------------------------------------------------
+
+    # Vite writes content-hashed files to /assets/. They never change, so cache for a year.
+    location /assets/ {
+        try_files $uri =404;
+        expires 1y;
+    }
+
+    # index.html names the hashed bundles, so it must always be revalidated.
+    location = /index.html {
+        expires -1;
+    }
+
+    location / {
+        try_files $uri $uri/ /index.html;
+        expires -1;
+    }
+}
