@@ -6,7 +6,7 @@
 
 **The optional admin panel for Tamamo.**
 
-[![Docs](https://img.shields.io/badge/Docs-Tamamo--docs-de6161?style=flat-square)](https://foxgirlsorg.github.io/Tamamo-docs/)
+[![Docs](https://img.shields.io/badge/Docs-Tamamo--docs-de6161?style=flat-square)](https://tamamo.foxgirls.org/)
 [![Image](https://img.shields.io/badge/Image-ghcr.io-de6161?style=flat-square&logo=docker&logoColor=white)](https://github.com/foxgirlsorg/Tamamo-webui/pkgs/container/tamamo-webui)
 [![Telegram](https://img.shields.io/badge/Telegram-@foxgirlsorg-de6161?style=flat-square&logo=telegram&logoColor=white)](https://t.me/foxgirlsorg)
 [![Website](https://img.shields.io/badge/Website-foxgirls.org-de6161?style=flat-square)](https://foxgirls.org)
@@ -22,7 +22,7 @@ In English, Русский and Українська.
 
 ## Run it
 
-Use the web UI compose file from the docs ([Installation](https://foxgirlsorg.github.io/Tamamo-docs/guide/installation)), or run the image yourself:
+Use the web UI compose file from the docs ([Installation](https://tamamo.foxgirls.org/guide/installation)), or run the image yourself:
 
 ```bash
 docker run -d -p 8081:8081 -e TAMAMO_API=http://tamamo:8081 ghcr.io/foxgirlsorg/tamamo-webui:latest
@@ -59,5 +59,5 @@ Stack: Vite, React 19, TypeScript, Tailwind CSS v4, shadcn/ui, react-router, Tan
 ---
 
 <div align="center">
-  <sub>© 2026 foxgirls.org &nbsp;·&nbsp; MIT License &nbsp;·&nbsp; <a href="https://foxgirls.org">foxgirls.org</a></sub>
+  <sub>© 2026 <a href="https://foxgirls.org">foxgirls.org</a> &nbsp;·&nbsp; MIT License</sub>
 </div>
