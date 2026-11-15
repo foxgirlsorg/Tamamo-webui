@@ -68,7 +68,7 @@ jobs:
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
-  # On a v* tag, after the image is pushed: publish the GitHub release, with
+  # On a v* tag on main, after the image is pushed: publish the GitHub release, with
   # notes built from the commit messages (.github/release-notes.sh).
   release:
     if: startsWith(github.ref, 'refs/tags/v')
@@ -81,10 +81,23 @@ jobs:
         with:
           fetch-depth: 0
 
+      # Release only tags whose commit is on main.
+      - name: Tag is on main
+        id: main
+        run: |
+          if git merge-base --is-ancestor "$GITHUB_SHA" origin/main; then
+            echo "on_main=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "on_main=false" >> "$GITHUB_OUTPUT"
+            echo "::notice::$GITHUB_REF_NAME is not on main, so no release is published."
+          fi
+
       - name: Release notes
+        if: steps.main.outputs.on_main == 'true'
         run: bash .github/release-notes.sh "$GITHUB_REF_NAME" > "$RUNNER_TEMP/notes.md"
 
       - name: Publish the release
+        if: steps.main.outputs.on_main == 'true'
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
