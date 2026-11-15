@@ -6,7 +6,7 @@ import i18n from '@/lib/i18n'
 const en = {
   checks: {
     title: 'Before the rules',
-    desc: 'These run on every request before any rule, in this order: unprotected pages, bypass headers, verified bots, rate limit, webhooks, then modules. The first one that decides wins.',
+    desc: 'These run on every request before any rule, in this order: the honeypot, unprotected pages, bypass headers, verified bots, rate limit, webhooks, then modules. The first one that decides wins.',
     open: {
       title: 'Never checked',
       desc: 'Requests that skip everything on this screen and every rule.',
@@ -14,6 +14,16 @@ const en = {
       pathsHelp: 'One per line, like rule paths: `/robots.txt`, `/.well-known/*`. Nothing runs for them, not even the rate limit.',
       sites: 'Accept passes from these sites',
       sitesHelp: 'Site names, one per line; `default` is the default site. For an API on another domain: its website gets a token from `/.tamamo/api/pass` and sends it in the `X-Tamamo-Pass` header, so visitors are not checked twice.',
+    },
+    honeypot: {
+      title: 'Honeypot',
+      desc: 'Trap pages that no real visitor opens. Whoever opens one is banned by IP address, on every site with the honeypot on, and gets Access denied for everything until the ban ends.',
+      enabled: 'Ban visitors who open a trap page',
+      paths: 'Trap pages',
+      pathsHelp: 'One per line, like rule paths: `/wp-login.php`, `/.env`, `/phpmyadmin/*`. Never list a page your site really has.',
+      hours: 'Ban length',
+      hoursHelp: '0 bans for as long as a pass lasts ({current}). Bans are lifted when Tamamo restarts.',
+      ipNote: 'Make sure Tamamo sees each visitor’s real IP address (Server → Visitor IP addresses). Otherwise one trap visit bans everyone who comes through the same proxy. Addresses in the trusted proxies are never banned.',
     },
     bots: {
       title: 'Verified bots',
@@ -88,7 +98,7 @@ const en = {
 const ru = {
   checks: {
     title: 'До правил',
-    desc: 'Выполняются для каждого запроса до любых правил, в таком порядке: незащищённые страницы, заголовки обхода, проверенные боты, лимит запросов, вебхуки, затем модули. Решает первая проверка, которая вынесла решение.',
+    desc: 'Выполняются для каждого запроса до любых правил, в таком порядке: ловушка, незащищённые страницы, заголовки обхода, проверенные боты, лимит запросов, вебхуки, затем модули. Решает первая проверка, которая вынесла решение.',
     open: {
       title: 'Без проверки',
       desc: 'Запросы, которые пропускают всё на этом экране и все правила.',
@@ -96,6 +106,16 @@ const ru = {
       pathsHelp: 'По одной в строке, как пути в правилах: `/robots.txt`, `/.well-known/*`. Для них не выполняется ничего, даже лимит запросов.',
       sites: 'Принимать пропуска этих сайтов',
       sitesHelp: 'Названия сайтов, по одному в строке; `default` — сайт по умолчанию. Для API на другом домене: его сайт получает токен по адресу `/.tamamo/api/pass` и отправляет его в заголовке `X-Tamamo-Pass`, поэтому посетителей не проверяют дважды.',
+    },
+    honeypot: {
+      title: 'Ловушка',
+      desc: 'Страницы-ловушки, которые настоящие посетители не открывают. Кто откроет такую, получает бан по IP-адресу на всех сайтах с включённой ловушкой: до конца бана на любой запрос он видит «Доступ запрещён».',
+      enabled: 'Банить тех, кто открывает страницу-ловушку',
+      paths: 'Страницы-ловушки',
+      pathsHelp: 'По одной в строке, как пути в правилах: `/wp-login.php`, `/.env`, `/phpmyadmin/*`. Не указывайте страницы, которые на сайте действительно есть.',
+      hours: 'Длительность бана',
+      hoursHelp: '0 — бан на столько же, сколько действует пропуск ({current}). Баны снимаются при перезапуске Tamamo.',
+      ipNote: 'Убедитесь, что Tamamo видит настоящий IP-адрес каждого посетителя (Сервер → IP-адреса посетителей). Иначе одно открытие ловушки забанит всех, кто приходит через тот же прокси. Адреса из доверенных прокси никогда не банятся.',
     },
     bots: {
       title: 'Проверенные боты',
@@ -170,7 +190,7 @@ const ru = {
 const uk = {
   checks: {
     title: 'До правил',
-    desc: 'Виконуються для кожного запиту до будь-яких правил, у такому порядку: незахищені сторінки, заголовки обходу, перевірені боти, ліміт запитів, вебхуки, потім модулі. Вирішує перша перевірка, яка ухвалила рішення.',
+    desc: 'Виконуються для кожного запиту до будь-яких правил, у такому порядку: пастка, незахищені сторінки, заголовки обходу, перевірені боти, ліміт запитів, вебхуки, потім модулі. Вирішує перша перевірка, яка ухвалила рішення.',
     open: {
       title: 'Без перевірки',
       desc: 'Запити, які пропускають усе на цьому екрані та всі правила.',
@@ -178,6 +198,16 @@ const uk = {
       pathsHelp: 'По одній у рядку, як шляхи в правилах: `/robots.txt`, `/.well-known/*`. Для них не виконується нічого, навіть ліміт запитів.',
       sites: 'Приймати перепустки цих сайтів',
       sitesHelp: 'Назви сайтів, по одній у рядку; `default` — сайт за замовчуванням. Для API на іншому домені: його сайт отримує токен за адресою `/.tamamo/api/pass` і надсилає його в заголовку `X-Tamamo-Pass`, тож відвідувачів не перевіряють двічі.',
+    },
+    honeypot: {
+      title: 'Пастка',
+      desc: 'Сторінки-пастки, які справжні відвідувачі не відкривають. Хто відкриє таку, отримує бан за IP-адресою на всіх сайтах з увімкненою пасткою: до кінця бану на будь-який запит бачить «Доступ заборонено».',
+      enabled: 'Банити тих, хто відкриває сторінку-пастку',
+      paths: 'Сторінки-пастки',
+      pathsHelp: 'По одній у рядку, як шляхи в правилах: `/wp-login.php`, `/.env`, `/phpmyadmin/*`. Не вказуйте сторінки, які на сайті справді є.',
+      hours: 'Тривалість бану',
+      hoursHelp: '0 — бан на стільки ж, скільки діє перепустка ({current}). Бани знімаються під час перезапуску Tamamo.',
+      ipNote: 'Переконайтеся, що Tamamo бачить справжню IP-адресу кожного відвідувача (Сервер → IP-адреси відвідувачів). Інакше одне відкриття пастки забанить усіх, хто приходить через той самий проксі. Адреси з довірених проксі ніколи не банються.',
     },
     bots: {
       title: 'Перевірені боти',

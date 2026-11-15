@@ -1,11 +1,12 @@
 import './i18n'
 
 import { useState } from 'react'
-import { ChevronRight, Eye, EyeOff, Plus, RefreshCw, Trash2 } from 'lucide-react'
+import { ChevronRight, Eye, EyeOff, Info, Plus, RefreshCw, Trash2 } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 
 import { Field, NumberField } from '@/components/fields'
 import { ListTextarea } from '@/components/list-textarea'
+import { Alert, AlertDescription } from '@/components/ui/alert'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
@@ -46,7 +47,7 @@ function formatWindow(lang: string, seconds: number): string {
   }
 }
 
-/** The checks that run before the rules: bypass headers, rate limit and webhooks. */
+/** The checks that run before the rules: honeypot, unprotected pages, bypass headers, verified bots, rate limit and webhooks. */
 export function ProtectionChecks({ protection: p, edit }: ChecksProps) {
   const { t } = useTranslation()
   return (
@@ -57,6 +58,7 @@ export function ProtectionChecks({ protection: p, edit }: ChecksProps) {
         </h2>
         <p className="max-w-prose text-sm text-muted-foreground">{t('checks.desc')}</p>
       </div>
+      <HoneypotCard protection={p} edit={edit} />
       <UnprotectedCard protection={p} edit={edit} />
       <BypassHeadersCard headers={p.bypass_headers} edit={edit} />
       <VerifiedBotsCard bots={p.verified_bots} edit={edit} />
@@ -68,6 +70,65 @@ export function ProtectionChecks({ protection: p, edit }: ChecksProps) {
 
 /** Crawlers the backend can confirm by reverse DNS (internal/checks/verifiedbots.go). */
 const VERIFIED_BOTS = 'Googlebot, Bingbot, Yandex, Baiduspider, Applebot, PetalBot, MojeekBot'
+
+// ---- honeypot ---------------------------------------------------------------
+
+function HoneypotCard({ protection: p, edit }: ChecksProps) {
+  const { t, i18n } = useTranslation()
+  const hp = p.honeypot
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle>{t('checks.honeypot.title')}</CardTitle>
+        <CardDescription>{t('checks.honeypot.desc')}</CardDescription>
+      </CardHeader>
+      <CardContent className="space-y-5">
+        <div className="flex items-center justify-between gap-4">
+          <Label htmlFor="honeypot-enabled">{t('checks.honeypot.enabled')}</Label>
+          <Switch
+            id="honeypot-enabled"
+            checked={hp.enabled}
+            onCheckedChange={(v) => edit((x) => void (x.honeypot.enabled = v))}
+          />
+        </div>
+        {hp.enabled ? (
+          <>
+            <div className="grid items-start gap-5 md:grid-cols-2">
+              <ListTextarea
+                id="honeypot-paths"
+                label={t('checks.honeypot.paths')}
+                help={t('checks.honeypot.pathsHelp')}
+                placeholder={['/wp-login.php', '/.env', '/phpmyadmin/*'].join('\n')}
+                rows={4}
+                list={hp.paths}
+                onChange={(list) => edit((x) => void (x.honeypot.paths = list))}
+              />
+              <Field
+                id="honeypot-hours"
+                label={t('checks.honeypot.hours')}
+                help={t('checks.honeypot.hoursHelp', { current: formatWindow(i18n.language, p.pass_hours * 3600) })}
+              >
+                <NumberField
+                  id="honeypot-hours"
+                  value={hp.ban_hours}
+                  onChange={(v) => edit((x) => void (x.honeypot.ban_hours = v))}
+                  min={0}
+                  max={8760}
+                  suffix={t('unit.hours')}
+                  aria-describedby="honeypot-hours-help"
+                />
+              </Field>
+            </div>
+            <Alert>
+              <Info aria-hidden />
+              <AlertDescription>{t('checks.honeypot.ipNote')}</AlertDescription>
+            </Alert>
+          </>
+        ) : null}
+      </CardContent>
+    </Card>
+  )
+}
 
 // ---- unprotected paths and passes from other sites ----------------------------
 

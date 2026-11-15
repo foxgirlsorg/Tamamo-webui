@@ -95,6 +95,11 @@ function normalizeProtection(p: Protection): Protection {
     unprotected_paths: p?.unprotected_paths ?? [],
     accept_passes_from: p?.accept_passes_from ?? [],
     verified_bots: p?.verified_bots ?? { enabled: false, action: 'block' },
+    honeypot: {
+      enabled: !!p?.honeypot?.enabled,
+      paths: p?.honeypot?.paths ?? [],
+      ban_hours: p?.honeypot?.ban_hours ?? 0,
+    },
     bypass_headers: p?.bypass_headers ?? [],
     rate_limit: { ...DEFAULT_RATE_LIMIT, ...p?.rate_limit },
     webhooks: p?.webhooks ?? [],

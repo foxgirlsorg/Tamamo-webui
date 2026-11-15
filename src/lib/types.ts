@@ -37,6 +37,8 @@ export interface Protection {
   accept_passes_from: string[]
   /** Confirms by reverse DNS that a visitor calling itself a search engine is one. */
   verified_bots: VerifiedBots
+  /** Bans visitors who open one of its trap pages. Runs before everything else. */
+  honeypot: Honeypot
   /** Checks that run before the rules: bypass headers, then the rate limit, then webhooks. */
   bypass_headers: BypassHeader[]
   rate_limit: RateLimit
@@ -47,6 +49,15 @@ export interface VerifiedBots {
   enabled: boolean
   /** What a fake crawler gets. */
   action: 'block' | 'challenge'
+}
+
+/** Trap pages: whoever opens one is banned by IP address (IPv6 by /64). */
+export interface Honeypot {
+  enabled: boolean
+  /** Patterns as in rule paths. */
+  paths: string[]
+  /** How long a ban lasts; 0 = as long as a pass (pass_hours). */
+  ban_hours: number
 }
 
 /** Requests carrying this secret header skip every check. */
