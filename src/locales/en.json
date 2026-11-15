@@ -1029,7 +1029,7 @@
     "webuiNote": "This web UI is optional. It runs only while the backend has TAMAMO_ENABLE_API=true; without it, Tamamo runs from its settings file alone.",
     "credits": "Credits",
     "creditsDev": "Made by <site>foxgirls.org</site>.",
-    "creditsArt": "Art by <artist>tr1flu0r1d3.exe</artist>.",
+    "creditsArt": "Art by <artist>Kiwi CR2</artist>.",
     "creditsIcons": "Interface icons from Lucide.",
     "mascot": "Eru, the mascot",
     "mascotDesc": "Eru is the mascot of <site>foxgirls.org</site>. Her three poses match the states of the checking page. Replace them under Checking page → Mascot & images.",

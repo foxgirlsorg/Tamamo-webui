@@ -53,7 +53,7 @@ Stack: Vite, React 19, TypeScript, Tailwind CSS v4, shadcn/ui, react-router, Tan
 ## Credits
 
 - Made by [foxgirls.org](https://foxgirls.org).
-- The mascot is **Eru**, the foxgirls.org mascot. Art by [tr1flu0r1d3.exe](https://t.me/tr1flu0r1d3_exe_art).
+- The mascot is **Eru**, the foxgirls.org mascot. Art by [Kiwi CR2](https://t.me/KiwiCR2).
 - Icons by [Lucide](https://lucide.dev).
 
 ---

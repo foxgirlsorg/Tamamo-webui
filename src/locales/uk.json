@@ -1049,7 +1049,7 @@
     "webuiNote": "Веб-інтерфейс необов’язковий. Він працює лише за TAMAMO_ENABLE_API=true; без нього Tamamo працює лише за файлом налаштувань.",
     "credits": "Автори",
     "creditsDev": "Розробка: <site>foxgirls.org</site>.",
-    "creditsArt": "Арт від <artist>tr1flu0r1d3.exe</artist>.",
+    "creditsArt": "Арт від <artist>Kiwi CR2</artist>.",
     "creditsIcons": "Значки інтерфейсу — Lucide.",
     "mascot": "Eru — маскот",
     "mascotDesc": "Eru — маскот <site>foxgirls.org</site>. Її три пози відповідають станам сторінки перевірки. Замінити їх можна в розділі «Сторінка перевірки» → «Маскот».",

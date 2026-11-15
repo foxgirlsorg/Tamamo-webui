@@ -8,7 +8,7 @@ import { useAppState } from '@/lib/auth'
 const SETTINGS_FILE = 'data/tamamo.yaml'
 const MASCOT_POSES = ['checking', 'success', 'denied'] as const
 const SITE_URL = 'https://foxgirls.org'
-const ARTIST_URL = 'https://t.me/tr1flu0r1d3_exe_art'
+const ARTIST_URL = 'https://t.me/KiwiCR2'
 const LINK_CLASS = 'text-primary underline-offset-4 hover:underline'
 
 /** Version, the settings file, credits (foxgirls.org, mascot art) and the mascot Eru. */
