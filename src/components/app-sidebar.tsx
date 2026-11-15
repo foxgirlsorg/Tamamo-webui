@@ -1,4 +1,4 @@
-import { ChevronsUpDown, LogOut } from 'lucide-react'
+import { ChevronsUpDown, LogOut, PanelsTopLeft } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 import { Link, useLocation } from 'react-router'
 
@@ -24,6 +24,7 @@ import {
   SidebarMenuItem,
   SidebarRail,
 } from '@/components/ui/sidebar'
+import { runningPages, useModulesInfo } from '@/lib/modules'
 import { NAV_GROUPS, NAV_ITEMS } from '@/lib/navigation'
 
 interface AppSidebarProps {
@@ -38,6 +39,8 @@ export function AppSidebar({ username, version, onSignOut }: AppSidebarProps) {
   const { pathname } = useLocation()
   const name = username || 'admin'
   const initials = name.slice(0, 2).toUpperCase()
+  // Pages that running modules add to the web UI get their own group.
+  const modulePages = runningPages(useModulesInfo().data)
   const versionLabel = version ? `v${version.replace(/^v/, '')}` : t('about.devBuild')
 
   return (
@@ -77,6 +80,25 @@ export function AppSidebar({ username, version, onSignOut }: AppSidebarProps) {
             </SidebarGroupContent>
           </SidebarGroup>
         ))}
+        {modulePages.length ? (
+          <SidebarGroup>
+            <SidebarGroupLabel>{t('nav.group.modulePages')}</SidebarGroupLabel>
+            <SidebarGroupContent>
+              <SidebarMenu>
+                {modulePages.map((p) => (
+                  <SidebarMenuItem key={p.to}>
+                    <SidebarMenuButton asChild isActive={pathname === p.to} tooltip={p.page.title}>
+                      <Link to={p.to}>
+                        <PanelsTopLeft aria-hidden />
+                        <span>{p.page.title}</span>
+                      </Link>
+                    </SidebarMenuButton>
+                  </SidebarMenuItem>
+                ))}
+              </SidebarMenu>
+            </SidebarGroupContent>
+          </SidebarGroup>
+        ) : null}
       </SidebarContent>
 
       <SidebarFooter>

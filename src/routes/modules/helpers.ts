@@ -1,52 +1,15 @@
-import { createElement, Fragment, type ReactNode } from 'react'
 import type { TFunction } from 'i18next'
-import { Cpu, Paintbrush, Webhook, type LucideIcon } from 'lucide-react'
 
 import { siteDisplayName } from '@/lib/config'
-import type { Config } from '@/lib/types'
+import type { Config, ModuleConfig, ModuleField, OnError } from '@/lib/types'
 
-export const MODULE_TYPES = ['go', 'webhook', 'page'] as const
-export const ON_ERROR_VALUES = ['continue', 'challenge', 'block'] as const
-export const PAGE_FILES = ['head.html', 'body.html', 'style.css', 'script.js'] as const
+export const ON_ERROR_VALUES: OnError[] = ['continue', 'challenge', 'block']
 
 /** Site ID the backend uses for the default site. */
 export const DEFAULT_SITE_ID = 'default'
 
-/** Limits the Go backend enforces (internal/config/modules.go, internal/modules). */
-export const WEBHOOK_TIMEOUT_MIN = 1
-export const WEBHOOK_TIMEOUT_MAX = 10000
-export const CACHE_MAX = 3600
-
-/** Same rule as legacy: letters, digits, dots, dashes and underscores. */
-export const MODULE_NAME = /^[a-zA-Z0-9][a-zA-Z0-9._-]{0,63}$/
-
-/** Settings the webhook form shows as its own controls. */
-export const WEBHOOK_FORM_SETTINGS = ['cache_seconds', 'send_cookies'] as const
-
-export const MODULE_ICON: Record<string, LucideIcon> = {
-  go: Cpu,
-  webhook: Webhook,
-  page: Paintbrush,
-}
-
-export function moduleTypeLabel(t: TFunction, type: string): string {
-  return (MODULE_TYPES as readonly string[]).includes(type) ? t(`modules.type.${type}`) : type
-}
-
-/** Placeholder character for `withNode`: a private-use code point no translation contains. */
-const SLOT = ''
-
-/**
- * Puts a React node where a translated string has its `{name}` placeholder.
- * Call with `t(key, { name: SLOT })`-style text: see `slotText`.
- */
-export function withNode(text: string, node: ReactNode): ReactNode {
-  const parts = text.split(SLOT)
-  return parts.map((part, i) => createElement(Fragment, { key: i }, part, i < parts.length - 1 ? node : null))
-}
-
-/** Value to pass to `t()` for the placeholder that `withNode` fills. */
-export const slotText = SLOT
+/** Names of module entries, as the backend checks them (module.ValidID). */
+export const MODULE_NAME = /^[a-z0-9][a-z0-9-]{0,63}$/
 
 /** Names of the sites a module is limited to, or "All sites" when the list is empty. */
 export function sitesSummary(t: TFunction, draft: Config, ids: string[]): string {
@@ -79,12 +42,34 @@ export function renameSetting(settings: Record<string, string>, oldKey: string, 
   return Object.fromEntries(Object.entries(settings).map(([k, v]) => [k === oldKey ? newKey : k, v]))
 }
 
-/** Options for the on_error Select, labeled as in legacy. */
-export function onErrorOptions(t: TFunction): { value: string; label: string }[] {
+/** Options for the on_error Select. */
+export function onErrorOptions(t: TFunction): { value: OnError; label: string }[] {
   return ON_ERROR_VALUES.map((v) => ({ value: v, label: t(`modules.onError.${v}`) }))
 }
 
-/** Clamps a cache value (seconds) to the backend range. */
-export function clampCache(n: number): number {
-  return Math.min(Math.max(n, 0), CACHE_MAX)
+/** `base`, or `base-2`, `base-3`... when entries with that name exist. */
+export function uniqueModuleName(base: string, existing: ModuleConfig[]): string {
+  const taken = new Set(existing.map((m) => m.name))
+  if (!taken.has(base)) return base
+  for (let n = 2; ; n++) {
+    const candidate = `${base.slice(0, 60)}-${n}`
+    if (!taken.has(candidate)) return candidate
+  }
+}
+
+/** Why a setting's value would be refused by the backend, or "" when it is fine. */
+export function settingError(t: TFunction, field: ModuleField, value: string | undefined): string {
+  const v = (value ?? '').trim()
+  if (v === '') return field.required ? t('modules.errRequired', { name: field.label || field.name }) : ''
+  if (field.type === 'number') {
+    const bounded = field.min !== 0 || field.max !== 0
+    const n = Number(v)
+    if (!/^-?\d+$/.test(v) || (bounded && (n < field.min || n > field.max))) {
+      return t('modules.errNumber', {
+        min: bounded ? field.min : '−∞',
+        max: bounded ? field.max : '∞',
+      })
+    }
+  }
+  return ''
 }

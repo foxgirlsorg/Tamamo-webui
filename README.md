@@ -38,6 +38,9 @@ listens on 8081 and proxies these paths to `TAMAMO_API`:
 - `/api/`
 - `/assets/img/`, `/assets/challenge/`, `/assets/modules/`, `/assets/mascot/`
 
+`/assets/modules/` carries the pages that compiled-in modules ship for the web
+UI, and the small script and stylesheet those pages use.
+
 `TAMAMO_API` defaults to `http://tamamo:8081`. The template is
 `nginx/default.conf.template`. It sets `Host`, `X-Forwarded-For`,
 `X-Forwarded-Proto` and `X-Real-IP` on every proxied request, because the
@@ -69,6 +72,28 @@ src/
   locales/en.json, ru.json, uk.json
 nginx/default.conf.template
 ```
+
+## Modules
+
+The web UI knows no module in advance. `GET /api/modules` lists the modules
+compiled into the backend with the settings each one declares, and
+`routes/modules/settings-editor.tsx` builds the form from that list. A module
+can also ship its own pages. They are listed in the sidebar under **Module
+pages** and shown in a frame by `routes/modules/module-page.tsx`,
+which also relays sign-out and the frame's height. To write a module, see the
+docs: [Tamamo-docs](https://github.com/foxgirlsorg/Tamamo-docs), section
+"Writing modules".
+
+The rate limit, bypass headers and webhooks are not modules. They are cards on
+the Protection screen.
+
+## Proxy snippets
+
+**Sites > Use with a proxy** generates a config for nginx, Caddy or Traefik, in
+auth mode or reverse proxy mode. The generators are plain functions in
+`routes/sites/nginx-config.ts`.
+
+## Saving
 
 Config screens edit one draft of the whole config. Use `useDraft()` to read
 `draft` and call `setDraft((d) => { ... })`, which receives a copy to mutate.

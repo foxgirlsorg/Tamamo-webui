@@ -1,6 +1,4 @@
-import './i18n'
-
-import { useTranslation } from 'react-i18next'
+import { Trans, useTranslation } from 'react-i18next'
 
 import { PageHeader } from '@/components/page-header'
 import { Badge } from '@/components/ui/badge'
@@ -9,12 +7,22 @@ import { useAppState } from '@/lib/auth'
 
 const SETTINGS_FILE = 'data/tamamo.yaml'
 const MASCOT_POSES = ['checking', 'success', 'denied'] as const
+const SITE_URL = 'https://foxgirls.org'
+const ARTIST_URL = 'https://t.me/tr1flu0r1d3_exe_art'
+const LINK_CLASS = 'text-primary underline-offset-4 hover:underline'
 
-/** Version, a short description, the settings file, credits and the mascot (legacy viewAbout). */
+/** Version, the settings file, credits (foxgirls.org, mascot art) and the mascot Eru. */
 export function AboutPage() {
   const { t } = useTranslation()
   const { data: state } = useAppState()
   const version = state?.version ? state.version.replace(/^v/, '') : ''
+
+  const siteLink = (
+    <a href={SITE_URL} target="_blank" rel="noreferrer" className={LINK_CLASS} />
+  )
+  const artistLink = (
+    <a href={ARTIST_URL} target="_blank" rel="noreferrer" className={LINK_CLASS} />
+  )
 
   return (
     <div className="space-y-6">
@@ -30,8 +38,13 @@ export function AboutPage() {
             className="size-28 shrink-0"
           />
           <div className="max-w-prose space-y-3">
-            <h2 className="text-2xl font-semibold tracking-tight">Tamamo</h2>
-            <p className="text-sm text-muted-foreground">{t('about.intro')}</p>
+            <div>
+              <h2 className="text-2xl font-semibold tracking-tight">Tamamo</h2>
+              <p className="text-sm text-muted-foreground">
+                <Trans i18nKey="about.by" components={{ site: siteLink }} />
+              </p>
+            </div>
+            <p className="text-sm">{t('about.intro')}</p>
             <div className="flex flex-wrap gap-2">
               <Badge variant="outline">{version ? t('about.version', { v: version }) : t('about.devBuild')}</Badge>
               <Badge variant="secondary">{t('about.noTelemetry')}</Badge>
@@ -58,7 +71,12 @@ export function AboutPage() {
           <CardTitle>{t('about.credits')}</CardTitle>
         </CardHeader>
         <CardContent className="space-y-2 text-sm">
-          <p>{t('about.creditsTamamo')}</p>
+          <p>
+            <Trans i18nKey="about.creditsDev" components={{ site: siteLink }} />
+          </p>
+          <p>
+            <Trans i18nKey="about.creditsArt" components={{ artist: artistLink }} />
+          </p>
           <p className="text-muted-foreground">{t('about.creditsIcons')}</p>
         </CardContent>
       </Card>
@@ -66,7 +84,9 @@ export function AboutPage() {
       <Card>
         <CardHeader>
           <CardTitle>{t('about.mascot')}</CardTitle>
-          <CardDescription>{t('about.mascotDesc')}</CardDescription>
+          <CardDescription>
+            <Trans i18nKey="about.mascotDesc" components={{ site: siteLink }} />
+          </CardDescription>
         </CardHeader>
         <CardContent className="flex flex-wrap justify-center gap-8">
           {MASCOT_POSES.map((pose) => (

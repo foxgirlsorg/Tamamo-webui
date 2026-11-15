@@ -31,6 +31,51 @@ export interface Protection {
   cookie_name: string
   cookie_domain: string
   max_failures_per_minute: number
+  /** Pages that are never checked at all. Patterns as in rules. */
+  unprotected_paths: string[]
+  /** Sites (by name or ID) whose passes are accepted here in the X-Tamamo-Pass header. */
+  accept_passes_from: string[]
+  /** Confirms by reverse DNS that a visitor calling itself a search engine is one. */
+  verified_bots: VerifiedBots
+  /** Checks that run before the rules: bypass headers, then the rate limit, then webhooks. */
+  bypass_headers: BypassHeader[]
+  rate_limit: RateLimit
+  webhooks: Webhook[]
+}
+
+export interface VerifiedBots {
+  enabled: boolean
+  /** What a fake crawler gets. */
+  action: 'block' | 'challenge'
+}
+
+/** Requests carrying this secret header skip every check. */
+export interface BypassHeader {
+  name: string
+  header: string
+  value: string
+}
+
+export interface RateLimit {
+  enabled: boolean
+  requests: number
+  window_seconds: number
+  action: 'block' | 'challenge'
+  ipv6_prefix: number
+  max_ips: number
+}
+
+export type OnError = 'continue' | 'challenge' | 'block'
+
+/** An HTTP endpoint Tamamo asks about each request. */
+export interface Webhook {
+  name: string
+  enabled: boolean
+  url: string
+  timeout_ms: number
+  on_error: OnError
+  cache_seconds: number
+  send_cookies: boolean
 }
 
 export interface HeaderMatch {
@@ -195,17 +240,16 @@ export interface Site {
   page: Page
 }
 
+/** One entry of the modules section: switches on a Go module compiled into the build. */
 export interface ModuleConfig {
+  /** Name of this entry: a-z, 0-9 and dashes. Used in URLs, logs and the data folder. */
   name: string
-  enabled: boolean
-  type: 'go' | 'webhook' | 'page' | string
-  /** Compiled-in Go module name (type "go"). */
+  /** ID the module registered under, when it differs from the name. */
   module?: string
+  enabled: boolean
   /** Site IDs the module applies to; empty means every site. */
   sites: string[]
-  url: string
-  timeout_ms: number
-  on_error: 'continue' | 'block' | string
+  on_error: OnError
   settings: Record<string, string>
 }
 
@@ -213,6 +257,8 @@ export interface AdminConfig {
   enabled: boolean
   listen: string
   domains: string[]
+  /** Proxies in front of the admin API whose X-Forwarded-For says who signs in. */
+  trusted_proxies: string[]
   username: string
   session_hours: number
 }
@@ -222,6 +268,8 @@ export interface ServerConfig {
   target: string
   ip_source: 'remote' | 'x-forwarded-for' | 'x-real-ip' | 'cf-connecting-ip'
   trusted_proxies: string[]
+  /** Whether /.tamamo/auth and /.tamamo/forward-auth answer. auto: only while target is empty. */
+  auth_endpoints: 'auto' | 'on' | 'off'
   preserve_host: boolean
   insecure_skip_verify: boolean
 }
@@ -361,29 +409,60 @@ export interface RulesFile {
   path: string
 }
 
-export interface ModuleSettingInfo {
+export type ModuleFieldType = 'text' | 'secret' | 'number' | 'bool' | 'select' | 'textarea' | 'list'
+
+/** One setting a module declares. The settings form is built from these. */
+export interface ModuleField {
   name: string
+  label: string
   description: string
+  type: ModuleFieldType
   default: string
+  placeholder: string
   required: boolean
+  options: { value: string; label: string }[]
+  /** Bounds of a number field; both 0 means none. */
+  min: number
+  max: number
 }
 
+/** A page a module adds to the web UI (shown in a frame). */
+export interface ModulePage {
+  id: string
+  title: string
+  path: string
+}
+
+/** A module compiled into this build. */
 export interface ModuleInfo {
+  id: string
   name: string
   description: string
-  settings: ModuleSettingInfo[]
+  version: string
+  author: string
+  homepage: string
+  settings: ModuleField[]
+  pages: ModulePage[]
+  has_ui: boolean
+  has_static: boolean
 }
 
-export interface PageModuleListing {
+/** An enabled, saved module entry that the backend is running. */
+export interface RunningModule {
   name: string
-  files: string[]
+  /** ID of the module it runs. */
+  module: string
+  /** What it hooks into: check, observe, request, response, page, http, admin, background. */
+  hooks: string[]
+  /** Why its background work could not start, or "". */
+  error: string
 }
 
 export interface ModulesResponse {
   available: ModuleInfo[]
-  page_modules: PageModuleListing[]
-  data_dir: string
-  modules_dir: string
+  running: RunningModule[]
+  kit_url: string
+  ui_url: string
 }
 
 export interface PreviewRequest {
@@ -391,6 +470,6 @@ export interface PreviewRequest {
   state?: PageState
   /** Translation code, or "" for the main texts. */
   lang?: string
-  /** Site ID whose page modules are shown, or "" for the default site. */
+  /** Site ID whose modules extend the page, or "" for the default site. */
   site?: string
 }

@@ -28,6 +28,7 @@ import { SidebarInset, SidebarProvider, SidebarTrigger } from '@/components/ui/s
 import { api } from '@/lib/api'
 import { AUTH_STATE_KEY, CONFIG_QUERY_KEY, setSignInNotice } from '@/lib/auth'
 import { useDraft } from '@/lib/draft-context'
+import { runningPages, useModulesInfo } from '@/lib/modules'
 import { HOME_PATH, NAV_ITEMS } from '@/lib/navigation'
 import type { AppState } from '@/lib/types'
 import { queryClient } from '@/lib/query-client'
@@ -47,7 +48,10 @@ export function AppLayout({ state }: AppLayoutProps) {
   const [confirmSignOut, setConfirmSignOut] = useState(false)
 
   const current = NAV_ITEMS.find((item) => pathname === item.path || pathname.startsWith(`${item.path}/`))
-  const pageTitle = current ? t(`nav.${current.key}`) : t('nav.overview')
+  const sectionTitle = current ? t(`nav.${current.key}`) : t('nav.overview')
+  // A module's own page sits under Modules in the breadcrumb.
+  const modulePage = runningPages(useModulesInfo().data).find((p) => p.to === decodeURIComponent(pathname))
+  const pageTitle = modulePage ? modulePage.page.title : sectionTitle
 
   useEffect(() => {
     document.title = t('shell.docTitle', { page: pageTitle })
@@ -72,7 +76,7 @@ export function AppLayout({ state }: AppLayoutProps) {
   return (
     <SidebarProvider>
       <AppSidebar username={state.username} version={state.version} onSignOut={requestSignOut} />
-      <SidebarInset className="min-h-svh">
+      <SidebarInset className="min-h-svh min-w-0">
         <header className="sticky top-0 z-10 flex h-14 shrink-0 items-center gap-2 border-b bg-background/80 px-4 backdrop-blur">
           <SidebarTrigger className="-ml-1" />
           <Separator orientation="vertical" className="mr-2 h-4" />
@@ -82,6 +86,14 @@ export function AppLayout({ state }: AppLayoutProps) {
                 <BreadcrumbLink href={`#${HOME_PATH}`}>Tamamo</BreadcrumbLink>
               </BreadcrumbItem>
               <BreadcrumbSeparator className="hidden sm:inline-flex" />
+              {modulePage && current ? (
+                <>
+                  <BreadcrumbItem className="hidden sm:inline-flex">
+                    <BreadcrumbLink href={`#${current.path}`}>{sectionTitle}</BreadcrumbLink>
+                  </BreadcrumbItem>
+                  <BreadcrumbSeparator className="hidden sm:inline-flex" />
+                </>
+              ) : null}
               <BreadcrumbItem>
                 <BreadcrumbPage>{pageTitle}</BreadcrumbPage>
               </BreadcrumbItem>
@@ -89,7 +101,7 @@ export function AppLayout({ state }: AppLayoutProps) {
           </Breadcrumb>
         </header>
 
-        <main className="flex flex-1 flex-col gap-6 p-4 md:p-6">
+        <main className="flex min-w-0 flex-1 flex-col gap-6 p-4 md:p-6">
           {state.restart_required ? (
             <Alert>
               <AlertTitle>{t('shell.restartTitle')}</AlertTitle>

@@ -13,7 +13,19 @@ import { siteDisplayName } from '@/lib/config'
 import { useDraft } from '@/lib/draft-context'
 import type { Site } from '@/lib/types'
 
-import { DEFAULT_SITE_PORT, nginxAuthConfig, nginxProxyConfig, tamamoAddress } from './nginx-config'
+import {
+  caddyAuthConfig,
+  caddyProxyConfig,
+  composeAddress,
+  DEFAULT_SITE_PORT,
+  nginxAuthConfig,
+  nginxProxyConfig,
+  PROXIES,
+  type Proxy,
+  tamamoAddress,
+  traefikAuthConfig,
+  traefikProxyConfig,
+} from './nginx-config'
 import { Rich } from './rich'
 
 type Mode = 'auth' | 'proxy'
@@ -53,7 +65,7 @@ interface NginxDialogProps {
   onOpenChange: (open: boolean) => void
 }
 
-/** "Use with nginx": a config snippet for the site, in auth_request or reverse proxy mode. */
+/** "Use with a proxy": a config snippet for the site, for nginx, Caddy or Traefik, in auth or reverse proxy mode. */
 export function NginxDialog({ site, open, onOpenChange }: NginxDialogProps) {
   const { t } = useTranslation()
   return (
@@ -65,7 +77,7 @@ export function NginxDialog({ site, open, onOpenChange }: NginxDialogProps) {
               ? t('nginx.title', { name: siteDisplayName(site, t('sites.unnamed')) })
               : t('nginx.titleDefault')}
           </DialogTitle>
-          <DialogDescription>{t('nginx.desc')}</DialogDescription>
+          <DialogDescription>{t('nginx.pick')}</DialogDescription>
         </DialogHeader>
         <NginxBody site={site} />
       </DialogContent>
@@ -80,8 +92,19 @@ function NginxBody({ site }: { site: Site | null }) {
   const addressId = useId()
   const appId = useId()
 
+  const [proxy, setProxy] = useState<Proxy>('nginx')
   const [mode, setMode] = useState<Mode>('auth')
   const [address, setAddress] = useState(() => tamamoAddress(effective.server.listen))
+  const info = PROXIES[proxy]
+
+  // Traefik reaches Tamamo by its compose service name; the others default to this machine.
+  const pickProxy = (next: Proxy) => {
+    const local = tamamoAddress(effective.server.listen)
+    const compose = composeAddress(effective.server.listen)
+    if (next === 'traefik' && address === local) setAddress(compose)
+    if (next !== 'traefik' && address === compose) setAddress(local)
+    setProxy(next)
+  }
   const [app, setApp] = useState(DEFAULT_APP_URL)
 
   const hosts = site ? site.hosts : []
@@ -90,22 +113,28 @@ function NginxBody({ site }: { site: Site | null }) {
     : '_'
   const tamamo = address.trim().replace(/\/+$/, '') || `http://127.0.0.1:${DEFAULT_SITE_PORT}`
   const appUrl = app.trim().replace(/\/+$/, '') || DEFAULT_APP_URL
-  const conf = mode === 'auth' ? nginxAuthConfig(serverName, tamamo, appUrl) : nginxProxyConfig(serverName, tamamo)
+  const auth = mode === 'auth'
+  let conf: string
+  if (proxy === 'caddy') conf = auth ? caddyAuthConfig(hosts, tamamo, appUrl) : caddyProxyConfig(hosts, tamamo)
+  else if (proxy === 'traefik') conf = auth ? traefikAuthConfig(hosts, tamamo) : traefikProxyConfig(hosts, tamamo)
+  else conf = auth ? nginxAuthConfig(serverName, tamamo, appUrl) : nginxProxyConfig(serverName, tamamo)
 
   const upstream = (site && site.target) || draft.server.target
   const explain =
-    mode === 'auth'
-      ? t('nginx.explainAuth')
-      : t('nginx.explainProxy', { upstream: `\`${upstream || t('nginx.noUpstream')}\`` })
+    auth
+      ? t('nginx.explainAuth', { proxy: info.label, directive: info.directive })
+      : t('nginx.explainProxy', { proxy: info.label, upstream: `\`${upstream || t('nginx.noUpstream')}\`` })
 
-  const ipOk = draft.server.ip_source === 'x-real-ip' && draft.server.trusted_proxies.length > 0
+  const ipOk = draft.server.ip_source === info.ipSource && draft.server.trusted_proxies.length > 0
 
   const fixIp = () => {
     setDraft((d) => {
-      d.server.ip_source = 'x-real-ip'
+      d.server.ip_source = info.ipSource
       if (!d.server.trusted_proxies.includes('127.0.0.1')) d.server.trusted_proxies.push('127.0.0.1')
     })
-    toast.info(t('nginx.ipChanged'), { description: t('nginx.ipChangedDesc') })
+    toast.info(t('nginx.ipChanged'), {
+      description: t('nginx.ipChangedDesc', { proxy: info.label, source: info.ipSource }),
+    })
   }
 
   const copy = async () => {
@@ -115,16 +144,31 @@ function NginxBody({ site }: { site: Site | null }) {
 
   return (
     <div className="space-y-4">
-      <Tabs value={mode} onValueChange={(v) => setMode(v as Mode)}>
-        <TabsList aria-label={t('nginx.mode')}>
-          <TabsTrigger value="auth">{t('nginx.modeAuth')}</TabsTrigger>
-          <TabsTrigger value="proxy">{t('nginx.modeProxy')}</TabsTrigger>
-        </TabsList>
-      </Tabs>
+      <div className="flex flex-wrap gap-2">
+        <Tabs value={proxy} onValueChange={(v) => pickProxy(v as Proxy)}>
+          <TabsList aria-label={t('nginx.proxy')}>
+            {(Object.keys(PROXIES) as Proxy[]).map((p) => (
+              <TabsTrigger key={p} value={p}>
+                {PROXIES[p].label}
+              </TabsTrigger>
+            ))}
+          </TabsList>
+        </Tabs>
+        <Tabs value={mode} onValueChange={(v) => setMode(v as Mode)}>
+          <TabsList aria-label={t('nginx.mode')}>
+            <TabsTrigger value="auth">{t('nginx.modeAuth', { directive: info.directive })}</TabsTrigger>
+            <TabsTrigger value="proxy">{t('nginx.modeProxy')}</TabsTrigger>
+          </TabsList>
+        </Tabs>
+      </div>
+
+      <p className="text-sm text-muted-foreground">
+        {proxy === 'traefik' ? t('nginx.descTraefik') : t('nginx.desc', { proxy: info.label })}
+      </p>
 
       <div className="grid gap-4 sm:grid-cols-2">
         <div className="space-y-2">
-          <Label htmlFor={addressId}>{t('nginx.address')}</Label>
+          <Label htmlFor={addressId}>{t('nginx.address', { proxy: info.label })}</Label>
           <Input
             id={addressId}
             className="font-mono"
@@ -135,7 +179,7 @@ function NginxBody({ site }: { site: Site | null }) {
             autoComplete="off"
           />
         </div>
-        {mode === 'auth' ? (
+        {auth && proxy !== 'traefik' ? (
           <div className="space-y-2">
             <Label htmlFor={appId}>{t('nginx.app')}</Label>
             <Input
@@ -157,7 +201,7 @@ function NginxBody({ site }: { site: Site | null }) {
       <div className="relative">
         <pre
           tabIndex={0}
-          aria-label={t('nginx.configLabel')}
+          aria-label={t('nginx.configLabel', { proxy: info.label })}
           className="max-h-96 overflow-auto rounded-md border bg-muted/40 p-4 pr-28 font-mono text-xs leading-relaxed"
         >
           {conf}
@@ -173,7 +217,7 @@ function NginxBody({ site }: { site: Site | null }) {
         <AlertTitle>{t('nginx.ipTitle')}</AlertTitle>
         <AlertDescription className="space-y-2">
           <p>
-            <Rich text={t('nginx.ipDesc')} />
+            <Rich text={t('nginx.ipDesc', { proxy: info.label, source: info.ipSource })} />
           </p>
           {ipOk ? null : (
             <Button variant="outline" size="sm" onClick={fixIp}>
@@ -185,7 +229,7 @@ function NginxBody({ site }: { site: Site | null }) {
 
       {hosts.length ? null : (
         <p className="text-sm text-muted-foreground">
-          <Rich text={t('nginx.catchAll')} />
+          <Rich text={proxy === 'nginx' ? t('nginx.catchAll') : t('nginx.placeholderHost')} />
         </p>
       )}
     </div>

@@ -10,6 +10,7 @@ import { CONFIG_QUERY_KEY } from '@/lib/auth'
 import { DraftContext, type ConfigSnapshot, type DraftContextValue } from '@/lib/draft-context'
 import { GLOBAL_SCOPE, normalizeConfig, siteIndex } from '@/lib/config'
 import i18n from '@/lib/i18n'
+import { MODULES_INFO_KEY } from '@/lib/modules'
 import type { Config } from '@/lib/types'
 
 interface DraftState {
@@ -68,6 +69,8 @@ export function DraftProvider({ children }: { children: ReactNode }) {
         effective: normalizeConfig(res.effective),
       })
       setDraftState(null)
+      // Saving starts and stops modules: ask the backend again which ones run.
+      void queryClient.invalidateQueries({ queryKey: MODULES_INFO_KEY })
     },
   })
 

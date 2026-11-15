@@ -2,7 +2,7 @@
 // the global-vs-site scope rules (ported from legacy/app.js: S.scope, OWN, sectionPath).
 // No React here, so these can be used from any module.
 
-import type { Config, Labels, Page, PageTranslation, Protection, Rule, Site } from '@/lib/types'
+import type { Config, Labels, Page, PageTranslation, Protection, RateLimit, Rule, Site } from '@/lib/types'
 
 /** Sections a site can either share with the global settings or own. */
 export type ScopedSection = 'protection' | 'rules' | 'page'
@@ -79,11 +79,34 @@ function normalizePage(page: Page): Page {
   }
 }
 
+/** Rate limit values of a fresh install (internal/config/defaults.go). */
+const DEFAULT_RATE_LIMIT: RateLimit = {
+  enabled: false,
+  requests: 120,
+  window_seconds: 60,
+  action: 'block',
+  ipv6_prefix: 64,
+  max_ips: 100000,
+}
+
+function normalizeProtection(p: Protection): Protection {
+  return {
+    ...p,
+    unprotected_paths: p?.unprotected_paths ?? [],
+    accept_passes_from: p?.accept_passes_from ?? [],
+    verified_bots: p?.verified_bots ?? { enabled: false, action: 'block' },
+    bypass_headers: p?.bypass_headers ?? [],
+    rate_limit: { ...DEFAULT_RATE_LIMIT, ...p?.rate_limit },
+    webhooks: p?.webhooks ?? [],
+  }
+}
+
 function normalizeSite(site: Site): Site {
   return {
     ...site,
     hosts: site.hosts ?? [],
     target: site.target ?? '',
+    protection: normalizeProtection(site.protection),
     rules: normalizeRules(site.rules),
     page: normalizePage(site.page),
   }
@@ -98,15 +121,14 @@ export function normalizeConfig(cfg: Config): Config {
     ...cfg,
     server: { ...cfg.server, trusted_proxies: cfg.server?.trusted_proxies ?? [] },
     admin: { ...cfg.admin, domains: cfg.admin?.domains ?? [] },
+    protection: normalizeProtection(cfg.protection),
     rules: normalizeRules(cfg.rules),
     page: normalizePage(cfg.page),
     sites: (cfg.sites ?? []).map(normalizeSite),
     modules: (cfg.modules ?? []).map((m) => ({
       ...m,
       name: m.name ?? '',
-      type: m.type || 'webhook',
-      url: m.url ?? '',
-      timeout_ms: m.timeout_ms || 0,
+      enabled: !!m.enabled,
       on_error: m.on_error || 'continue',
       sites: m.sites ?? [],
       settings: m.settings ?? {},

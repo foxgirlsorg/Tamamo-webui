@@ -1,8 +1,8 @@
-import { useState, type ReactNode } from 'react'
 import { useTranslation } from 'react-i18next'
 import { TriangleAlert } from 'lucide-react'
 
 import { Field, NumberField } from '@/components/fields'
+import { ListTextarea } from '@/components/list-textarea'
 import { PageHeader } from '@/components/page-header'
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
@@ -10,19 +10,10 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Switch } from '@/components/ui/switch'
-import { Textarea } from '@/components/ui/textarea'
 import { useDraft } from '@/lib/draft-context'
 import type { ServerConfig } from '@/lib/types'
 
 const IP_SOURCES: ServerConfig['ip_source'][] = ['remote', 'x-forwarded-for', 'x-real-ip', 'cf-connecting-ip']
-
-/** One entry per line, trimmed, without blanks (legacy listField). */
-function parseLines(text: string): string[] {
-  return text
-    .split('\n')
-    .map((line) => line.trim())
-    .filter(Boolean)
-}
 
 /** Host name check for the admin domains list, with `*.example.com` wildcards (legacy hostAllowed). */
 function hostAllowed(host: string, domains: string[]): boolean {
@@ -68,63 +59,6 @@ function SwitchRow({
   )
 }
 
-/**
- * A textarea with one list entry per line. The text stays as typed; the draft
- * receives the parsed list. When the list changes from outside (discard, save),
- * the text is rebuilt from it.
- */
-function ListTextarea({
-  id,
-  label,
-  help,
-  placeholder,
-  rows = 4,
-  list,
-  onChange,
-  envName,
-}: {
-  id: string
-  label: ReactNode
-  help: string
-  placeholder?: string
-  rows?: number
-  list: string[]
-  onChange?: (list: string[]) => void
-  /** Environment variable that fixes this list. When set, the field is read-only. */
-  envName?: string
-}) {
-  const joined = list.join('\n')
-  const [text, setText] = useState(joined)
-  const [seen, setSeen] = useState(joined)
-
-  // Adjust during render when the list changed from outside (discard, save, lock).
-  if (joined !== seen) {
-    setSeen(joined)
-    if (parseLines(text).join('\n') !== joined) setText(joined)
-  }
-
-  const readOnly = !!envName
-  return (
-    <Field id={id} label={label} help={help} lockedBy={envName}>
-      <Textarea
-        id={id}
-        className="font-mono text-[0.8125rem]"
-        rows={rows}
-        placeholder={placeholder}
-        spellCheck={false}
-        value={text}
-        readOnly={readOnly}
-        aria-describedby={`${id}-help`}
-        onChange={(e) => {
-          const next = e.target.value
-          setText(next)
-          onChange?.(parseLines(next))
-        }}
-      />
-    </Field>
-  )
-}
-
 /** Listen addresses, upstream, client IP source, admin API domains and statistics (legacy viewServer). */
 export function ServerPage() {
   const { t } = useTranslation()
@@ -139,6 +73,7 @@ export function ServerPage() {
   const lockedAdminListen = locked['admin.listen']
   const lockedIpSource = locked['server.ip_source']
   const lockedDomains = locked['admin.domains']
+  const lockedAdminProxies = locked['admin.trusted_proxies']
   const domains = lockedDomains ? effective.admin.domains : draft.admin.domains
 
   const host = typeof window === 'undefined' ? '' : window.location.hostname
@@ -173,6 +108,23 @@ export function ServerPage() {
                 d.server.target = e.target.value
               })}
             />
+          </Field>
+          <Field id="server-auth-endpoints" label={t('server.authEndpoints')} help={t('server.authEndpointsHelp')}>
+            <Select
+              value={srv.auth_endpoints || 'auto'}
+              onValueChange={(v) => setDraft((d) => {
+                d.server.auth_endpoints = v as ServerConfig['auth_endpoints']
+              })}
+            >
+              <SelectTrigger id="server-auth-endpoints" className="w-full sm:w-80" aria-describedby="server-auth-endpoints-help">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="auto">{t('server.authEndpointsAuto')}</SelectItem>
+                <SelectItem value="on">{t('server.authEndpointsOn')}</SelectItem>
+                <SelectItem value="off">{t('server.authEndpointsOff')}</SelectItem>
+              </SelectContent>
+            </Select>
           </Field>
           <div className="divide-y">
             <SwitchRow
@@ -315,6 +267,18 @@ export function ServerPage() {
             envName={lockedDomains}
             onChange={(list) => setDraft((d) => {
               d.admin.domains = list
+            })}
+          />
+          <ListTextarea
+            id="admin-trusted-proxies"
+            label={t('server.adminProxies')}
+            help={t('server.adminProxiesHelp')}
+            placeholder="private"
+            rows={2}
+            list={lockedAdminProxies ? effective.admin.trusted_proxies ?? [] : draft.admin.trusted_proxies ?? []}
+            envName={lockedAdminProxies}
+            onChange={(list) => setDraft((d) => {
+              d.admin.trusted_proxies = list
             })}
           />
           {showLockout ? (

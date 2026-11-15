@@ -15,6 +15,8 @@ import { getAtPath, setAtPath } from '@/lib/config'
 import { useDraft, useScope } from '@/lib/draft-context'
 import type { Action, Protection } from '@/lib/types'
 
+import { ProtectionChecks } from './checks'
+
 /** Typical hash rates used for the time estimate (legacy values). */
 const LAPTOP_HPS = 1_500_000
 const PHONE_HPS = 400_000
@@ -354,6 +356,15 @@ export function ProtectionPage() {
               </Field>
             </CardContent>
           </Card>
+
+          <ProtectionChecks
+            protection={p}
+            edit={(fn) => {
+              setDraft((d) => {
+                fn(getAtPath<Protection>(d, path))
+              })
+            }}
+          />
         </>
       ) : null}
     </div>

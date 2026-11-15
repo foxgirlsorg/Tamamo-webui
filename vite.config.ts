@@ -4,8 +4,9 @@ import react from '@vitejs/plugin-react'
 import { defineConfig } from 'vite'
 
 // The admin API runs as a separate Tamamo process; during development the
-// Vite server forwards /api and /assets to it.
-const apiTarget = 'http://localhost:8081'
+// Vite server forwards /api and /assets to it. Set TAMAMO_API to use another
+// address than the default.
+const apiTarget = process.env.TAMAMO_API || 'http://localhost:8081'
 
 // https://vite.dev/config/
 export default defineConfig({

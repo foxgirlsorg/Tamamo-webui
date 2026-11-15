@@ -5,6 +5,7 @@ import { HOME_PATH } from '@/lib/navigation'
 import { AboutPage } from '@/routes/about'
 import { ActivityPage } from '@/routes/activity'
 import { ModulesPage } from '@/routes/modules'
+import { ModulePageScreen } from '@/routes/modules/module-page'
 import { OverviewPage } from '@/routes/overview'
 import { PageDesignerPage } from '@/routes/page'
 import { ProtectionPage } from '@/routes/protection'
@@ -30,6 +31,7 @@ export const router = createHashRouter([
       { path: 'protection', Component: ProtectionPage },
       { path: 'rules', Component: RulesPage },
       { path: 'modules', Component: ModulesPage },
+      { path: 'modules/:name/:page', Component: ModulePageScreen },
       { path: 'page', Component: PageDesignerPage },
       { path: 'server', Component: ServerPage },
       { path: 'security', Component: SecurityPage },

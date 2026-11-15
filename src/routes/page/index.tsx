@@ -102,7 +102,7 @@ function DesignerView() {
               }}
               className="min-w-0 gap-4"
             >
-              <TabsList className="h-auto w-full flex-wrap justify-start [&>*]:flex-none">
+              <TabsList className="h-auto! w-full flex-wrap justify-start [&>*]:flex-none">
                 {TABS.map((item) => (
                   <TabsTrigger key={item.id} value={item.id}>
                     {t(item.label)}

@@ -22,3 +22,10 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+# Agent/editor files live outside the repos
+.claude/
+AGENTS.md
+CLAUDE.md
+.agents/
+.codegraph/
