@@ -11,9 +11,9 @@ import { Field } from '@/components/fields'
 import { cn } from '@/lib/utils'
 import type { Labels, PageTranslation } from '@/lib/types'
 
-import { Rich, TextArea, TextField } from './controls'
+import { Rich, SelectField, TextArea, TextField } from './controls'
 import { useDesigner } from './designer-store'
-import { LABEL_GROUPS, LABEL_HELP, PAGE_STATES } from './page-model'
+import { LABEL_GROUPS, LABEL_HELP, PAGE_LANGUAGES, PAGE_STATES, langLabel } from './page-model'
 
 interface TextEditorProps {
   /** "main" for the main language, or a translation code. */
@@ -34,6 +34,13 @@ export function TextEditor({ target }: TextEditorProps) {
   const hint = (get: (b: PageTranslation) => string): string | undefined => (isMain ? undefined : get(page) || undefined)
   const labelHint = (k: keyof Labels): string | undefined =>
     (isMain ? defaults.labels[k] : page.labels[k] || defaults.labels[k]) || undefined
+  // Main language: the languages Tamamo has texts for. A code set in
+  // tamamo.yaml outside the list stays selectable so it isn't lost.
+  const mainLang = (page.lang || 'en').toLowerCase()
+  const mainLangOptions = [
+    ...PAGE_LANGUAGES,
+    ...(PAGE_LANGUAGES.some((c) => c === mainLang) ? [] : [mainLang]),
+  ].map((c) => ({ value: c, label: langLabel(c) }))
   const idp = `text-${target}`
   const setBlock = (mutate: (b: PageTranslation) => void) => editText(target, mutate)
 
@@ -54,13 +61,12 @@ export function TextEditor({ target }: TextEditorProps) {
               onChange={(v) => setBlock((b) => { b.title = v })}
             />
             {isMain ? (
-              <TextField
+              <SelectField
                 id={`${idp}-lang`}
                 label={t('page.text.lang')}
-                value={page.lang}
-                placeholder="en"
-                mono
-                help={<Rich text={t('page.text.langHelp')} />}
+                value={mainLang}
+                options={mainLangOptions}
+                help={t('page.text.langHelp')}
                 onChange={(v) => edit((p) => { p.lang = v })}
               />
             ) : (

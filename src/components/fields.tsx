@@ -42,7 +42,9 @@ export function Field({ id, label, help, lockedBy, error, className, children }:
   const helpId = `${id}-help`
   const errorId = `${id}-error`
   return (
-    <FormItem className={cn('gap-2', className)}>
+    // content-start: in a grid row next to a taller field (one with help text),
+    // keep the label and control at the top instead of spreading them out.
+    <FormItem className={cn('content-start gap-2', className)}>
       {label || lockedBy ? (
         <div className="flex flex-wrap items-center justify-between gap-2">
           {label ? <Label htmlFor={id}>{label}</Label> : <span />}

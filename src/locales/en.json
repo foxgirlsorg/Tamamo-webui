@@ -571,7 +571,7 @@
       "page": "Page",
       "title": "Browser tab title",
       "lang": "Language code",
-      "langHelp": "The main language, for screen readers and translation tools, e.g. `en`, `de`, `pt-BR`.",
+      "langHelp": "The language the texts above are written in. Browsers and screen readers use it.",
       "noscript": "Message when JavaScript is off",
       "footer": "Footer text",
       "footerPlaceholder": "Optional, e.g. a contact address",

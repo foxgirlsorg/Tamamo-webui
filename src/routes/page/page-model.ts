@@ -182,6 +182,12 @@ export const CSS_TARGETS: [selector: string, key: string][] = [
   ['--tm-mascot-size, --tm-bg-blur, --tm-bg-dim', 'mascot'],
 ]
 
+/**
+ * Languages Tamamo ships checking-page texts for: English (the default main
+ * texts) and the built-in translations (config.DefaultTranslations).
+ */
+export const PAGE_LANGUAGES = ['en', 'ru', 'uk'] as const
+
 /** A language's name in the UI language, with its code, e.g. "Русский (ru)". */
 export function langLabel(code: string): string {
   if (!code) return ''
